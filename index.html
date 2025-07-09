@@ -2,13 +2,17 @@
 <html lang="ru">
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Объявления</title>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+
+  <!-- Tailwind -->
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -29,6 +33,7 @@
       }
     };
   </script>
+
   <style>
     body {
       background: linear-gradient(145deg, #e0e7ff, #f8fafc);
@@ -52,25 +57,21 @@
       <header class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-12">
         <h1 class="text-4xl md:text-5xl font-bold">💬 Объявления</h1>
         <div class="flex flex-wrap gap-2 md:gap-3">
-          <a href="#" onclick="downloadRules()" class="text-accent underline hover:text-yellow-600">📅 Скачать
-            правила</a>
+          <a href="#" onclick="downloadRules()" class="text-accent underline hover:text-yellow-600">📅 Скачать правила</a>
           <button onclick="toggleTheme()"
             class="text-xl px-4 py-2 rounded-lg bg-accent text-white hover:bg-yellow-500 transition">🌃</button>
-          <button id="authButton" onclick="signInWithGoogle()"
+          <button id="authButton"
             class="text-sm px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">🔐 Войти</button>
         </div>
       </header>
 
       <form id="adForm" class="glass dark:bg-gray-800 p-8 rounded-3xl shadow-2xl space-y-5 mb-12">
-        <input type="text" id="title" placeholder="Заголовок"
-          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900"
-          required>
-        <textarea id="description" placeholder="Описание"
-          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900"
-          required></textarea>
-        <input type="text" id="author" placeholder="Ваше имя"
-          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900"
-          required>
+        <input type="text" id="title" placeholder="Заголовок" required
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900" />
+        <textarea id="description" placeholder="Описание" required
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900"></textarea>
+        <input type="text" id="author" placeholder="Ваше имя" required
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900" />
         <select id="category"
           class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900">
           <option value="Общее">📌 Общее</option>
@@ -78,15 +79,15 @@
           <option value="Покупка">🚲 Покупка</option>
           <option value="Услуги">🔧 Услуги</option>
         </select>
-        <input type="file" id="image" accept="image/*" class="w-full text-sm dark:text-gray-400">
+        <input type="file" id="image" accept="image/*"
+          class="w-full text-sm dark:text-gray-400" />
         <button type="submit"
-          class="w-full bg-primary hover:bg-secondary text-white py-3 rounded-xl font-semibold transition">📤
-          Опубликовать</button>
+          class="w-full bg-primary hover:bg-secondary text-white py-3 rounded-xl font-semibold transition">📤 Опубликовать</button>
       </form>
 
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
         <input id="searchInput" type="text" placeholder="🔍 Поиск объявлений..."
-          class="w-full md:flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900">
+          class="w-full md:flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900" />
         <select id="sortSelect"
           class="w-full md:w-60 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900">
           <option value="created">🕒 По дате</option>
@@ -104,6 +105,7 @@
     </div>
   </div>
 
+  <!-- Modal -->
   <div id="confirmModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
     <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-sm text-center space-y-4">
       <p class="text-lg font-semibold">Удалить это объявление?</p>
@@ -116,6 +118,7 @@
     </div>
   </div>
 
+  <!-- Основной JavaScript -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCHLAbHqf08LeqlGWhGe1vlOUc_HCk31b4",
@@ -132,27 +135,6 @@
     const storage = firebase.storage();
     const ADMIN_EMAILS = ["axmatovaxmat848@gmail.com"];
 
-    function signInWithGoogle() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).then(() => {
-        renderAds();
-        checkAdmin();
-      }).catch(error => alert("Ошибка входа: " + error.message));
-    }
-
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        document.getElementById("authButton").textContent = `👤 ${user.displayName}`;
-        checkAdmin();
-      }
-    });
-
-    function checkAdmin() {
-      const panel = document.getElementById("adminPanel");
-      const user = auth.currentUser;
-      panel.classList.toggle("hidden", !(user && ADMIN_EMAILS.includes(user.email)));
-    }
-
     function downloadRules() {
       const rules = `ПРАВИЛА ЧАТА ❗\n...`;
       const blob = new Blob([rules], { type: 'text/plain' });
@@ -164,32 +146,11 @@
       document.body.removeChild(link);
     }
 
-    document.getElementById("adForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const title = adForm.title.value.trim();
-      const description = adForm.description.value.trim();
-      const author = adForm.author.value.trim();
-      const category = adForm.category.value;
-      const file = document.getElementById("image").files[0];
-      let imageUrl = "";
-      if (file) {
-        const storageRef = storage.ref(`ads/${Date.now()}_${file.name}`);
-        await storageRef.put(file);
-        imageUrl = await storageRef.getDownloadURL();
-      }
-      db.collection("ads").add({
-        title, description, author, category, imageUrl,
-        created: firebase.firestore.FieldValue.serverTimestamp()
-      }).then(() => {
-        adForm.reset();
-        renderAds();
-      });
-    });
-
-    const sortSelect = document.getElementById("sortSelect");
-    const searchInput = document.getElementById("searchInput");
-    sortSelect.addEventListener("change", renderAds);
-    searchInput.addEventListener("input", renderAds);
+    function checkAdmin() {
+      const panel = document.getElementById("adminPanel");
+      const user = auth.currentUser;
+      panel.classList.toggle("hidden", !(user && ADMIN_EMAILS.includes(user.email)));
+    }
 
     function renderAds() {
       const query = searchInput.value.toLowerCase();
@@ -197,7 +158,6 @@
       db.collection("ads").get().then(snapshot => {
         let ads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         ads = ads.filter(ad => ad.title.toLowerCase().includes(query));
-
         ads.sort((a, b) => {
           if (sortBy === "created") return b.created?.toDate?.() - a.created?.toDate?.();
           return a[sortBy]?.localeCompare(b[sortBy]);
@@ -225,6 +185,54 @@
         });
       });
     }
+
+    function signInWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then(() => {
+          renderAds();
+          checkAdmin();
+        })
+        .catch(error => alert("Ошибка входа: " + error.message));
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById("authButton").textContent = `👤 ${user.displayName}`;
+        checkAdmin();
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("authButton").addEventListener("click", signInWithGoogle);
+
+      document.getElementById("adForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const title = adForm.title.value.trim();
+        const description = adForm.description.value.trim();
+        const author = adForm.author.value.trim();
+        const category = adForm.category.value;
+        const file = document.getElementById("image").files[0];
+        let imageUrl = "";
+        if (file) {
+          const storageRef = storage.ref(`ads/${Date.now()}_${file.name}`);
+          await storageRef.put(file);
+          imageUrl = await storageRef.getDownloadURL();
+        }
+        db.collection("ads").add({
+          title, description, author, category, imageUrl,
+          created: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+          adForm.reset();
+          renderAds();
+        });
+      });
+
+      sortSelect.addEventListener("change", renderAds);
+      searchInput.addEventListener("input", renderAds);
+
+      renderAds();
+    });
   </script>
 </body>
 
