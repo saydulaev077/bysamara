@@ -144,12 +144,20 @@
 
   <!-- 🔹 Скрипт -->
   <script>
-    const firebaseConfig = { /* ... твой config ... */ };
+    const firebaseConfig = {
+      apiKey: "AIzaSyCHLAbHqf08LeqlGWhGe1vlOUc_HCk31b4",
+      authDomain: "officialbysamaraa.firebaseapp.com",
+      projectId: "officialbysamaraa",
+      storageBucket: "officialbysamaraa.appspot.com",
+      messagingSenderId: "730619245461",
+      appId: "1:730619245461:web:b462380b3043b587333c9c",
+      measurementId: "G-6XRGSMP72W"
+    };
+
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
-
     const ADMIN_EMAILS = ["axmatovaxmat848@gmail.com"];
     let currentUserEmail = null;
 
@@ -245,13 +253,13 @@
       const card = document.createElement("div");
       card.className = "glass p-4 rounded shadow-md";
       card.innerHTML = `
-        <h2 class="text-xl font-bold">${ad.title}</h2>
-        <p>${ad.description}</p>
-        <p class="text-sm text-gray-500 mt-1">Автор: ${ad.author}</p>
-        ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="${ad.title}" class="mt-2 rounded max-h-64">` : ""}
-        ${renderAdActions({ id, title: ad.title, description: ad.description })}
-        <ul class="comments-list text-sm mt-2 space-y-1" id="comments-${id}"></ul>
-      `;
+      <h2 class="text-xl font-bold">${ad.title}</h2>
+      <p>${ad.description}</p>
+      <p class="text-sm text-gray-500 mt-1">Автор: ${ad.author}</p>
+      ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="${ad.title}" class="mt-2 rounded max-h-64">` : ""}
+      ${renderAdActions({ id, title: ad.title, description: ad.description })}
+      <ul class="comments-list text-sm mt-2 space-y-1" id="comments-${id}"></ul>
+    `;
       adsList.prepend(card);
       loadComments(id);
     }
@@ -261,14 +269,17 @@
       const liked = localStorage.getItem(likeKey);
       const isAdmin = ADMIN_EMAILS.includes(currentUserEmail || "");
       return `
-        <div class="flex flex-wrap gap-2 items-center mt-4">
-          <button class="like-btn text-sm text-pink-500 hover:text-pink-600" data-id="${ad.id}">${liked ? '💖 Понравилось' : '❤️ Нравится'}</button>
-          <input placeholder="Добавить комментарий..." data-id="${ad.id}" class="comment-input w-full p-1 text-sm border rounded" />
-          ${isAdmin ? `
-            <button class="delete-btn text-sm text-red-500 hover:text-red-600" data-id="${ad.id}">🗑 Удалить</button>
-            <button class="edit-btn text-sm text-blue-500 hover:text-blue-600" data-id="${ad.id}" data-title="${ad.title}" data-description="${ad.description}">✏️ Редактировать</button>
-          ` : ''}
-        </div>`;
+      <div class="flex flex-wrap gap-2 items-center mt-4">
+        <button class="like-btn text-sm text-pink-500 hover:text-pink-600" data-id="${ad.id}">
+          ${liked ? '💖 Понравилось' : '❤️ Нравится'}
+        </button>
+        <input placeholder="Добавить комментарий..." data-id="${ad.id}"
+          class="comment-input w-full p-1 text-sm border rounded" />
+        ${isAdmin ? `
+          <button class="delete-btn text-sm text-red-500 hover:text-red-600" data-id="${ad.id}">🗑 Удалить</button>
+          <button class="edit-btn text-sm text-blue-500 hover:text-blue-600" data-id="${ad.id}" data-title="${ad.title}"
+            data-description="${ad.description}">✏️ Редактировать</button>` : ""}
+      </div>`;
     }
 
     function loadAds() {
