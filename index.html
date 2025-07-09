@@ -52,11 +52,11 @@
       <header class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-12">
         <h1 class="text-4xl md:text-5xl font-bold">💬 Объявления</h1>
         <div class="flex flex-wrap gap-2 md:gap-3">
-          <a href="#" onclick="downloadRules()" class="text-accent underline hover:text-yellow-600">📥 Скачать
+          <a href="#" onclick="downloadRules()" class="text-accent underline hover:text-yellow-600">📅 Скачать
             правила</a>
           <button onclick="toggleTheme()"
-            class="text-xl px-4 py-2 rounded-lg bg-accent text-white hover:bg-yellow-500 transition">🌓</button>
-          <button onclick="signInWithGoogle()"
+            class="text-xl px-4 py-2 rounded-lg bg-accent text-white hover:bg-yellow-500 transition">🌃</button>
+          <button id="authButton" onclick="signInWithGoogle()"
             class="text-sm px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">🔐 Войти</button>
         </div>
       </header>
@@ -75,7 +75,7 @@
           class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900">
           <option value="Общее">📌 Общее</option>
           <option value="Продажа">💰 Продажа</option>
-          <option value="Покупка">🛒 Покупка</option>
+          <option value="Покупка">🚲 Покупка</option>
           <option value="Услуги">🔧 Услуги</option>
         </select>
         <input type="file" id="image" accept="image/*" class="w-full text-sm dark:text-gray-400">
@@ -121,7 +121,7 @@
       apiKey: "AIzaSyCHLAbHqf08LeqlGWhGe1vlOUc_HCk31b4",
       authDomain: "officialbysamaraa.firebaseapp.com",
       projectId: "officialbysamaraa",
-      storageBucket: "officialbysamaraa.firebasestorage.app",
+      storageBucket: "officialbysamaraa.appspot.com",
       messagingSenderId: "730619245461",
       appId: "1:730619245461:web:b462380b3043b587333c9c",
       measurementId: "G-6XRGSMP72W"
@@ -137,12 +137,12 @@
       auth.signInWithPopup(provider).then(() => {
         renderAds();
         checkAdmin();
-      });
+      }).catch(error => alert("Ошибка входа: " + error.message));
     }
 
     auth.onAuthStateChanged(user => {
       if (user) {
-        document.querySelector("button[onclick='signInWithGoogle()']").textContent = `👤 ${user.displayName}`;
+        document.getElementById("authButton").textContent = `👤 ${user.displayName}`;
         checkAdmin();
       }
     });
@@ -150,15 +150,11 @@
     function checkAdmin() {
       const panel = document.getElementById("adminPanel");
       const user = auth.currentUser;
-      if (user && ADMIN_EMAILS.includes(user.email)) {
-        panel.classList.remove("hidden");
-      } else {
-        panel.classList.add("hidden");
-      }
+      panel.classList.toggle("hidden", !(user && ADMIN_EMAILS.includes(user.email)));
     }
 
     function downloadRules() {
-      const rules = `ПРАВИЛА ЧАТА ❗\n...`; // Здесь вставить полные правила
+      const rules = `ПРАВИЛА ЧАТА ❗\n...`;
       const blob = new Blob([rules], { type: 'text/plain' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
@@ -191,43 +187,40 @@
     });
 
     const sortSelect = document.getElementById("sortSelect");
+    const searchInput = document.getElementById("searchInput");
     sortSelect.addEventListener("change", renderAds);
+    searchInput.addEventListener("input", renderAds);
 
     function renderAds() {
       const query = searchInput.value.toLowerCase();
       const sortBy = sortSelect.value;
       db.collection("ads").get().then(snapshot => {
-        let ads = [];
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          data.id = doc.id;
-          ads.push(data);
+        let ads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        ads = ads.filter(ad => ad.title.toLowerCase().includes(query));
+
+        ads.sort((a, b) => {
+          if (sortBy === "created") return b.created?.toDate?.() - a.created?.toDate?.();
+          return a[sortBy]?.localeCompare(b[sortBy]);
         });
-        if (sortBy === "title") ads.sort((a, b) => a.title.localeCompare(b.title));
-        else if (sortBy === "author") ads.sort((a, b) => a.author.localeCompare(b.author));
-        else if (sortBy === "category") ads.sort((a, b) => a.category.localeCompare(b.category));
-        else ads.sort((a, b) => b.created?.toDate?.() - a.created?.toDate?.());
 
         adsList.innerHTML = "";
         adminAdsList.innerHTML = "";
 
         ads.forEach(ad => {
-          if (!ad.title.toLowerCase().includes(query)) return;
-          const adElement = document.createElement("div");
-          adElement.className = "bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md transition hover:shadow-xl flex flex-col justify-between";
-          adElement.innerHTML = `
-            <h2 class="text-xl font-semibold mb-2">${ad.title}</h2>
-            <span class="text-xs text-gray-400">📁 ${ad.category}</span>
-            <p class="text-sm text-gray-700 dark:text-gray-300 my-4">${ad.description}</p>
-            ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="image" class="rounded-xl mb-4">` : ''}
-            <div class="flex justify-between items-center text-xs text-gray-500">
-              <span>👤 ${ad.author}</span>
-              <button onclick="deleteAd('${ad.id}')" class="text-red-500 hover:text-red-600">🗑️ Удалить</button>
+          const adHTML = `
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl">
+              <h2 class="text-xl font-semibold mb-2">${ad.title}</h2>
+              <span class="text-xs text-gray-400">📁 ${ad.category}</span>
+              <p class="text-sm text-gray-700 dark:text-gray-300 my-4">${ad.description}</p>
+              ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="image" class="rounded-xl mb-4">` : ''}
+              <div class="flex justify-between items-center text-xs text-gray-500">
+                <span>👤 ${ad.author}</span>
+                <button onclick="deleteAd('${ad.id}')" class="text-red-500 hover:text-red-600">🗑️ Удалить</button>
+              </div>
             </div>`;
-          adsList.appendChild(adElement);
+          adsList.insertAdjacentHTML("beforeend", adHTML);
           if (auth.currentUser && ADMIN_EMAILS.includes(auth.currentUser.email)) {
-            const adminAdElement = adElement.cloneNode(true);
-            adminAdsList.appendChild(adminAdElement);
+            adminAdsList.insertAdjacentHTML("beforeend", adHTML);
           }
         });
       });
