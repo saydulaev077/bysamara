@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Объявления</title>
 
   <!-- Firebase -->
@@ -12,43 +12,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
-  <!-- Tailwind -->
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS -->
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Тема и иконка -->
-  <script>
-    const storedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-
-    if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const themeToggle = document.getElementById("themeToggle");
-
-      function updateThemeIcon() {
-        const isDark = document.documentElement.classList.contains("dark");
-        themeToggle.textContent = isDark ? "☀️" : "🌙";
-      }
-
-      updateThemeIcon();
-
-      themeToggle.addEventListener("click", () => {
-        document.documentElement.classList.toggle("dark");
-        const isDark = document.documentElement.classList.contains("dark");
-        localStorage.setItem("theme", isDark ? "dark" : "light");
-        updateThemeIcon();
-      });
-    });
-  </script>
-
-  <!-- Стили -->
   <style>
     body {
       background: linear-gradient(145deg, #e0e7ff, #ffffff);
@@ -102,12 +69,43 @@
       }
     }
   </style>
+
+  <script>
+    const storedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const themeToggle = document.getElementById("themeToggle");
+
+      function updateThemeIcon() {
+        const isDark = document.documentElement.classList.contains("dark");
+        themeToggle.textContent = isDark ? "☀️" : "🌙";
+      }
+
+      updateThemeIcon();
+
+      themeToggle.addEventListener("click", () => {
+        document.documentElement.classList.toggle("dark");
+        const isDark = document.documentElement.classList.contains("dark");
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+        updateThemeIcon();
+      });
+    });
+  </script>
 </head>
 
 <body class="text-gray-900 dark:text-gray-100 font-sans transition-colors">
   <div id="toastContainer"></div>
   <main class="container mx-auto p-4 max-w-4xl">
-    <!-- 🔹 Шапка -->
+    <!-- Шапка -->
     <header class="flex justify-between items-center mb-6">
       <h1 class="text-3xl font-bold">📢 Объявления</h1>
       <div class="flex gap-2 items-center">
@@ -122,9 +120,7 @@
       </div>
     </header>
 
-    <!-- 🔹 Форма объявления -->
-    <!-- (оставлена без изменений, продолжай с твоего кода ниже) -->
-
+    <!-- Форма объявления -->
     <form id="adForm" class="glass p-4 rounded-xl mb-6">
       <input type="text" name="title" placeholder="Заголовок" class="w-full p-2 rounded mb-2" required />
       <textarea name="description" placeholder="Описание" class="w-full p-2 rounded mb-2" required></textarea>
@@ -141,7 +137,7 @@
       </button>
     </form>
 
-    <!-- 🔹 Фильтрация -->
+    <!-- Фильтрация -->
     <div class="flex justify-between mb-4">
       <input type="text" id="searchInput" placeholder="Поиск..." class="w-full p-2 border rounded" />
       <select id="sortSelect" class="ml-2 p-2 rounded">
@@ -150,10 +146,10 @@
       </select>
     </div>
 
-    <!-- 🔹 Список объявлений -->
+    <!-- Список объявлений -->
     <section id="adsList" class="grid gap-4"></section>
 
-    <!-- 🔹 Админ-панель -->
+    <!-- Админ-панель -->
     <section id="adminPanel" class="hidden glass p-4 rounded-xl mt-8">
       <h2 class="text-xl font-bold mb-2">🛠 Админ-панель</h2>
       <p class="mb-2">Добро пожаловать, администратор!</p>
@@ -163,105 +159,321 @@
     </section>
   </main>
 
-  <!-- 🔹 Скрипт -->
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      // Firebase конфигурация
-      const firebaseConfig = {
-        apiKey: "AIzaSyA0vpiFyn1TfCNdL_yZsUpWhcEqxDFlE-o",
-        authDomain: "bardovka.firebaseapp.com",
-        projectId: "bardovka",
-        storageBucket: "bardovka.appspot.com",
-        messagingSenderId: "1187834472",
-        appId: "1:1187834472:web:4a2b7d6c20e9b82c0f7d78",
-        measurementId: "G-KXD60VFGD3"
-      };
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
-      const auth = firebase.auth();
-      const storage = firebase.storage();
+    // Инициализация Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCHLAbHqf08LeqlGWhGe1vlOUc_HCk31b4",
+      authDomain: "officialbysamaraa.firebaseapp.com",
+      projectId: "officialbysamaraa",
+      storageBucket: "officialbysamaraa.appspot.com",
+      messagingSenderId: "730619245461",
+      appId: "1:730619245461:web:b462380b3043b587333c9c",
+      measurementId: "G-6XRGSMP72W"
+    };
 
-      const toast = document.getElementById("toast");
-      const toastMessage = document.getElementById("toast-message");
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
 
-      function showToast(message, type = "success") {
-        toastMessage.textContent = message;
-        toast.style.backgroundColor = type === "success" ? "#4caf50" : "#f44336";
-        toast.style.bottom = "20px";
-        setTimeout(() => {
-          toast.style.bottom = "-100px";
-        }, 3000);
-      }
+    const ADMIN_EMAILS = ["axmatovaxmat848@gmail.com"];
+    let currentUserEmail = null;
 
-      const authButton = document.getElementById("authButton");
-      const userEmailDisplay = document.getElementById("userEmail");
+    const authButton = document.getElementById("authButton");
+    const logoutButton = document.getElementById("logoutButton");
+    const adsList = document.getElementById("adsList");
+    const adForm = document.getElementById("adForm");
+    const searchInput = document.getElementById("searchInput");
+    const sortSelect = document.getElementById("sortSelect");
 
-      authButton.addEventListener("click", async () => {
-        if (auth.currentUser) {
-          await auth.signOut();
-          showToast("Вы вышли из аккаунта");
-        } else {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          auth.signInWithPopup(provider)
-            .then((result) => {
-              showToast("Вы успешно вошли");
-            })
-            .catch((error) => {
-              showToast("Ошибка при входе", "error");
-              console.error(error);
-            });
-        }
-      });
+    // Вход через Google
+    authButton.addEventListener("click", () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then(() => {
+          showToast("Успешный вход!");
+          logEvent("✅ Пользователь вошел");
+        })
+        .catch(() => showToast("Ошибка входа", "error"));
+    });
 
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          authButton.textContent = "🚪 Выйти";
-          userEmailDisplay.textContent = `Вы вошли как: ${user.email}`;
-        } else {
-          authButton.textContent = "🔐 Войти";
-          userEmailDisplay.textContent = "";
-        }
-      });
-
-      document.getElementById("adForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
-        console.log("Форма отправлена"); // проверка
-
-        if (!auth.currentUser) {
-          showToast("Сначала войдите в аккаунт", "error");
-          return;
-        }
-
-        const title = document.getElementById("title").value;
-        const description = document.getElementById("description").value;
-        const fileInput = document.getElementById("image");
-        const file = fileInput.files[0];
-
-        const data = {
-          title,
-          description,
-          user: auth.currentUser.email,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        try {
-          if (file) {
-            const ref = storage.ref().child(`ads/${Date.now()}_${file.name}`);
-            await ref.put(file);
-            data.imageUrl = await ref.getDownloadURL();
-          }
-
-          await db.collection("ads").add(data);
-          showToast("Объявление опубликовано!");
-
-          document.getElementById("adForm").reset();
-        } catch (err) {
-          console.error("Ошибка при отправке формы:", err);
-          showToast("Ошибка при публикации", "error");
-        }
+    // Выход
+    logoutButton.addEventListener("click", () => {
+      auth.signOut().then(() => {
+        showToast("Вы вышли");
+        logEvent("🚪 Пользователь вышел");
       });
     });
+
+    // Обработка изменения состояния аутентификации
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        authButton.classList.add("hidden");
+        logoutButton.classList.remove("hidden");
+        currentUserEmail = user.email;
+        if (ADMIN_EMAILS.includes(user.email)) {
+          document.getElementById("adminPanel").classList.remove("hidden");
+          logEvent(`🔑 Админ вошел: ${user.email}`);
+        } else {
+          document.getElementById("adminPanel").classList.add("hidden");
+        }
+      } else {
+        authButton.classList.remove("hidden");
+        logoutButton.classList.add("hidden");
+        document.getElementById("adminPanel").classList.add("hidden");
+        currentUserEmail = null;
+      }
+    });
+
+    // Показ уведомлений
+    function showToast(message, type = "info") {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.style.background = type === "error" ? "#ef4444" : "#4f46e5";
+      toast.textContent = message;
+      document.getElementById("toastContainer").appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // Лог событий (админ-панель)
+    function logEvent(message) {
+      const logOutput = document.getElementById("logOutput");
+      if (logOutput) {
+        const timestamp = new Date().toLocaleString();
+        logOutput.textContent += `[${timestamp}] ${message}\n`;
+        logOutput.scrollTop = logOutput.scrollHeight;
+      }
+    }
+
+    // Добавить объявление
+    adForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      if (!currentUserEmail) {
+        showToast("Пожалуйста, войдите в систему, чтобы публиковать объявления", "error");
+        return;
+      }
+
+      const form = e.target;
+      const data = {
+        title: form.title.value.trim(),
+        description: form.description.value.trim(),
+        author: form.author.value.trim(),
+        category: form.category.value,
+        created: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      const file = document.getElementById("image").files[0];
+      if (file) {
+        try {
+          const ref = storage.ref().child(`ads/${Date.now()}_${file.name}`);
+          await ref.put(file);
+          data.imageUrl = await ref.getDownloadURL();
+        } catch {
+          showToast("Ошибка загрузки изображения", "error");
+          return;
+        }
+      }
+
+      db.collection("ads").add(data)
+        .then(() => {
+          form.reset();
+          loadAds();
+          showToast("Объявление добавлено!");
+          logEvent(`📢 Объявление добавлено: ${data.title}`);
+        })
+        .catch(() => showToast("Ошибка публикации", "error"));
+    });
+
+    // Отрисовка одного объявления
+    function renderAd(ad, id) {
+      const card = document.createElement("div");
+      card.className = "glass p-4 rounded shadow-md";
+      card.dataset.id = id;
+
+      card.innerHTML = `
+        <h2 class="text-xl font-bold">${escapeHtml(ad.title)}</h2>
+        <p>${escapeHtml(ad.description)}</p>
+        <p class="text-sm text-gray-500 mt-1">Автор: ${escapeHtml(ad.author)}</p>
+        ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="${escapeHtml(ad.title)}" class="mt-2 rounded max-h-64" />` : ""}
+        ${renderAdActions({ id, title: ad.title, description: ad.description })}
+        <ul class="comments-list text-sm mt-2 space-y-1" id="comments-${id}"></ul>
+      `;
+      adsList.prepend(card);
+      loadComments(id);
+    }
+
+    // Экранирование текста для безопасности
+    function escapeHtml(text) {
+      if (!text) return "";
+      return text.replace(/[&<>"']/g, m => {
+        switch (m) {
+          case "&": return "&amp;";
+          case "<": return "&lt;";
+          case ">": return "&gt;";
+          case '"': return "&quot;";
+          case "'": return "&#039;";
+        }
+      });
+    }
+
+    // Отрисовка действий под объявлением
+    function renderAdActions(ad) {
+      const likeKey = `likes_${ad.id}`;
+      const liked = localStorage.getItem(likeKey);
+      const isAdmin = ADMIN_EMAILS.includes(currentUserEmail || "");
+
+      return `
+        <div class="flex flex-wrap gap-2 items-center mt-4">
+          <button class="like-btn text-sm text-pink-500 hover:text-pink-600" data-id="${ad.id}">
+            ${liked ? "💖 Понравилось" : "❤️ Нравится"}
+          </button>
+          <input placeholder="Добавить комментарий..." data-id="${ad.id}"
+            class="comment-input w-full p-1 text-sm border rounded" />
+          ${isAdmin ? `
+            <button class="delete-btn text-sm text-red-500 hover:text-red-600" data-id="${ad.id}">🗑 Удалить</button>
+            <button class="edit-btn text-sm text-blue-500 hover:text-blue-600" data-id="${ad.id}" data-title="${escapeHtml(ad.title)}"
+              data-description="${escapeHtml(ad.description)}">✏️ Редактировать</button>
+          ` : ""}
+        </div>
+      `;
+    }
+
+    // Загрузка и отображение всех объявлений
+    async function loadAds() {
+      adsList.innerHTML = "";
+      let query = db.collection("ads");
+
+      // Фильтрация по поиску
+      const searchText = searchInput.value.trim().toLowerCase();
+      const sortBy = sortSelect.value;
+
+      // Получаем все объявления, потом фильтруем на клиенте (Firestore не умеет по части текста сложный поиск)
+      try {
+        const snapshot = await query.orderBy("created", "desc").get();
+        let ads = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (
+            !searchText ||
+            (data.title && data.title.toLowerCase().includes(searchText)) ||
+            (data.description && data.description.toLowerCase().includes(searchText)) ||
+            (data.author && data.author.toLowerCase().includes(searchText)) ||
+            (data.category && data.category.toLowerCase().includes(searchText))
+          ) {
+            ads.push({ id: doc.id, ...data });
+          }
+        });
+
+        // Сортировка
+        if (sortBy === "title") {
+          ads.sort((a, b) => a.title.localeCompare(b.title));
+        } else {
+          ads.sort((a, b) => b.created?.seconds - a.created?.seconds);
+        }
+
+        ads.forEach(ad => renderAd(ad, ad.id));
+      } catch {
+        showToast("Ошибка загрузки объявлений", "error");
+      }
+    }
+
+    // Лайк
+    adsList.addEventListener("click", e => {
+      if (e.target.classList.contains("like-btn")) {
+        const id = e.target.dataset.id;
+        const key = `likes_${id}`;
+        if (localStorage.getItem(key)) {
+          localStorage.removeItem(key);
+          e.target.textContent = "❤️ Нравится";
+          showToast("Лайк убран");
+        } else {
+          localStorage.setItem(key, "true");
+          e.target.textContent = "💖 Понравилось";
+          showToast("Лайк поставлен");
+        }
+      } else if (e.target.classList.contains("delete-btn")) {
+        const id = e.target.dataset.id;
+        if (confirm("Удалить объявление?")) {
+          db.collection("ads").doc(id).delete()
+            .then(() => {
+              showToast("Объявление удалено");
+              logEvent(`🗑 Объявление удалено: ${id}`);
+              loadAds();
+            })
+            .catch(() => showToast("Ошибка удаления", "error"));
+        }
+      } else if (e.target.classList.contains("edit-btn")) {
+        const id = e.target.dataset.id;
+        const oldTitle = e.target.dataset.title;
+        const oldDesc = e.target.dataset.description;
+        const newTitle = prompt("Введите новый заголовок", oldTitle);
+        if (newTitle === null) return;
+        const newDesc = prompt("Введите новое описание", oldDesc);
+        if (newDesc === null) return;
+
+        db.collection("ads").doc(id).update({
+          title: newTitle,
+          description: newDesc
+        }).then(() => {
+          showToast("Объявление обновлено");
+          logEvent(`✏️ Объявление обновлено: ${id}`);
+          loadAds();
+        }).catch(() => showToast("Ошибка обновления", "error"));
+      }
+    });
+
+    // Добавление комментария по Enter
+    adsList.addEventListener("keydown", e => {
+      if (e.target.classList.contains("comment-input") && e.key === "Enter") {
+        e.preventDefault();
+        const input = e.target;
+        const id = input.dataset.id;
+        const text = input.value.trim();
+        if (!text) return;
+        input.value = "";
+
+        const commentData = {
+          text,
+          created: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        db.collection("ads").doc(id).collection("comments").add(commentData)
+          .then(() => {
+            showToast("Комментарий добавлен");
+            logEvent(`💬 Комментарий к объявлению ${id}`);
+            loadComments(id);
+          })
+          .catch(() => showToast("Ошибка добавления комментария", "error"));
+      }
+    });
+
+    // Загрузка комментариев для объявления
+    async function loadComments(adId) {
+      const commentsList = document.getElementById(`comments-${adId}`);
+      if (!commentsList) return;
+      commentsList.innerHTML = "";
+      try {
+        const snapshot = await db.collection("ads").doc(adId).collection("comments").orderBy("created", "desc").get();
+        snapshot.forEach(doc => {
+          const c = doc.data();
+          const date = c.created?.toDate().toLocaleString() || "";
+          const item = document.createElement("li");
+          item.textContent = `${c.text} (${date})`;
+          commentsList.appendChild(item);
+        });
+      } catch {
+        commentsList.innerHTML = "<li>Ошибка загрузки комментариев</li>";
+      }
+    }
+
+    // Фильтрация и сортировка по изменениям
+    searchInput.addEventListener("input", () => loadAds());
+    sortSelect.addEventListener("change", () => loadAds());
+
+    // Загрузка объявлений при старте
+    loadAds();
   </script>
+
 </body>
 
 </html>
