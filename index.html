@@ -130,23 +130,17 @@
   </main>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCHLAbHqf08LeqlGWhGe1vlOUc_HCk31b4",
-      authDomain: "officialbysamaraa.firebaseapp.com",
-      projectId: "officialbysamaraa",
-      storageBucket: "officialbysamaraa.appspot.com",
-      messagingSenderId: "730619245461",
-      appId: "1:730619245461:web:b462380b3043b587333c9c",
-      measurementId: "G-6XRGSMP72W"
-    };
+    const firebaseConfig = { /* ... твой config ... */ };
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     const storage = firebase.storage();
+
     const ADMIN_EMAILS = ["axmatovaxmat848@gmail.com"];
 
     const authButton = document.getElementById("authButton");
     const logoutButton = document.getElementById("logoutButton");
+    const adsList = document.getElementById("adsList");
 
     authButton.addEventListener("click", () => {
       const provider = new firebase.auth.GoogleAuthProvider();
@@ -156,10 +150,7 @@
     });
 
     logoutButton.addEventListener("click", () => {
-      auth.signOut().then(() => {
-        showToast("Вы вышли из аккаунта");
-        location.reload();
-      });
+      auth.signOut().then(() => showToast("Вы вышли"));
     });
 
     auth.onAuthStateChanged(user => {
@@ -170,7 +161,35 @@
       } else {
         authButton.classList.remove("hidden");
         logoutButton.classList.add("hidden");
+        authButton.textContent = "🔐 Войти";
       }
+    });
+
+    document.getElementById("adForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = {
+        title: form.title.value,
+        description: form.description.value,
+        author: form.author.value,
+        category: form.category.value,
+        created: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      const file = document.getElementById("image").files[0];
+      if (file) {
+        const ref = storage.ref().child(`ads/${Date.now()}_${file.name}`);
+        await ref.put(file);
+        data.imageUrl = await ref.getDownloadURL();
+      }
+
+      db.collection("ads").add(data)
+        .then(() => {
+          form.reset();
+          loadAds();
+          showToast("Объявление добавлено!");
+        })
+        .catch(() => showToast("Ошибка публикации", "error"));
     });
 
     function showToast(message, type = "info") {
@@ -182,13 +201,27 @@
       setTimeout(() => toast.remove(), 3000);
     }
 
-    const themeToggle = document.getElementById("themeToggle");
-    themeToggle.addEventListener("click", () => {
-      document.documentElement.classList.toggle("dark");
-      localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
-    });
-    if (localStorage.getItem("theme") === "dark") {
-      document.documentElement.classList.add("dark");
+    function renderAd(ad, id) {
+      const card = document.createElement("div");
+      card.className = "glass p-4 rounded shadow-md";
+      card.innerHTML = `
+        <h2 class="text-xl font-bold">${ad.title}</h2>
+        <p>${ad.description}</p>
+        <p class="text-sm text-gray-500 mt-1">Автор: ${ad.author}</p>
+        ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="${ad.title}" class="mt-2 rounded max-h-64">` : ""}
+        ${renderAdActions({ id })}
+        <ul class="comments-list text-sm mt-2 space-y-1" id="comments-${id}"></ul>
+      `;
+      adsList.prepend(card);
+      loadComments(id);
+    }
+
+    function loadAds() {
+      adsList.innerHTML = "";
+      db.collection("ads").orderBy("created", "desc").get()
+        .then(snapshot => {
+          snapshot.forEach(doc => renderAd(doc.data(), doc.id));
+        });
     }
 
     function renderAdActions(ad) {
@@ -198,16 +231,35 @@
         <div class="flex gap-4 items-center mt-4">
           <button class="like-btn text-sm text-pink-500 hover:text-pink-600" data-id="${ad.id}">${liked ? '💖 Понравилось' : '❤️ Нравится'}</button>
           <input placeholder="Добавить комментарий..." data-id="${ad.id}" class="comment-input w-full p-1 text-sm border rounded" />
-        </div>
-        <ul class="comments-list text-sm mt-2 space-y-1" id="comments-${ad.id}"></ul>
-      `;
+        </div>`;
     }
 
     function addComment(adId, text) {
+      const user = auth.currentUser;
+      const commentData = {
+        text,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        author: user ? user.displayName : "Аноним"
+      };
+      db.collection("ads").doc(adId).collection("comments").add(commentData)
+        .then(() => renderComment(adId, commentData))
+        .catch(() => showToast("Ошибка при добавлении комментария", "error"));
+    }
+
+    function renderComment(adId, { text, author }) {
       const commentList = document.getElementById(`comments-${adId}`);
-      const li = document.createElement("li");
-      li.textContent = text;
-      commentList.appendChild(li);
+      if (commentList) {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${author}:</strong> ${text}`;
+        commentList.appendChild(li);
+      }
+    }
+
+    function loadComments(adId) {
+      db.collection("ads").doc(adId).collection("comments").orderBy("createdAt").get()
+        .then(snapshot => {
+          snapshot.forEach(doc => renderComment(adId, doc.data()));
+        });
     }
 
     document.addEventListener("click", e => {
@@ -230,6 +282,8 @@
         e.target.value = "";
       }
     });
+
+    window.addEventListener("load", loadAds);
   </script>
 </body>
 
