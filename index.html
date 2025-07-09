@@ -99,6 +99,9 @@
         <button id="authButton"
           class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-secondary transition">🔐
           Войти</button>
+        <button id="logoutButton"
+          class="hidden px-4 py-2 rounded-xl bg-danger text-white font-semibold hover:bg-red-600 transition">🚪
+          Выйти</button>
       </div>
     </header>
 
@@ -143,6 +146,8 @@
     const ADMIN_EMAILS = ["axmatovaxmat848@gmail.com"];
 
     const authButton = document.getElementById("authButton");
+    const logoutButton = document.getElementById("logoutButton");
+
     authButton.addEventListener("click", () => {
       const provider = new firebase.auth.GoogleAuthProvider();
       auth.signInWithPopup(provider)
@@ -150,9 +155,21 @@
         .catch(err => showToast("Ошибка входа", "error"));
     });
 
+    logoutButton.addEventListener("click", () => {
+      auth.signOut().then(() => {
+        showToast("Вы вышли из аккаунта");
+        location.reload();
+      });
+    });
+
     auth.onAuthStateChanged(user => {
       if (user) {
+        authButton.classList.add("hidden");
+        logoutButton.classList.remove("hidden");
         authButton.textContent = `👤 ${user.displayName}`;
+      } else {
+        authButton.classList.remove("hidden");
+        logoutButton.classList.add("hidden");
       }
     });
 
