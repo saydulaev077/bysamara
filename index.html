@@ -1,181 +1,238 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Правила чата</title>
-  <link rel="icon" href="📜" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Объявления</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Manrope', 'sans-serif']
+          },
+          colors: {
+            primary: '#4f46e5',
+            secondary: '#4338ca',
+            accent: '#f59e0b',
+            danger: '#ef4444'
+          }
+        }
+      }
+    };
+  </script>
   <style>
-    :root {
-      --bg-light: #f4f4f4;
-      --bg-dark: #1e1e1e;
-      --text-light: #333;
-      --text-dark: #ccc;
-      --card-light: #fff;
-      --card-dark: #2b2b2b;
-      --accent: #6c5ce7;
-    }
-
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 2rem;
-      background-color: var(--bg-light);
-      color: var(--text-light);
-      transition: background 0.3s, color 0.3s;
+      background: linear-gradient(145deg, #e0e7ff, #f8fafc);
     }
 
-    body.dark {
-      background-color: var(--bg-dark);
-      color: var(--text-dark);
+    .dark body {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
     }
 
-    h1, h2 {
-      color: var(--accent);
-    }
-
-    section {
-      margin-bottom: 2rem;
-      background: var(--card-light);
-      padding: 1.5rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-      transition: background 0.3s, color 0.3s;
-    }
-
-    body.dark section {
-      background: var(--card-dark);
-      color: var(--text-dark);
-    }
-
-    ul {
-      padding-left: 1.5rem;
-    }
-
-    li {
-      margin-bottom: 0.5rem;
-    }
-
-    strong {
-      color: #d63031;
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 2rem;
-      font-size: 0.9rem;
-      color: #777;
-    }
-
-    .top-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-    }
-
-    .btn {
-      background-color: var(--accent);
-      border: none;
-      color: white;
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .btn:hover {
-      opacity: 0.9;
-    }
-
-    .theme-toggle {
-      cursor: pointer;
-      background: none;
-      border: 2px solid var(--accent);
-      border-radius: 8px;
-      padding: 0.5rem 1rem;
-      color: var(--accent);
-      font-weight: bold;
+    .glass {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
   </style>
 </head>
-<body>
-  <div class="top-bar">
-    <button class="theme-toggle" onclick="toggleTheme()">🌗 Переключить тему</button>
-    <a href="rules.txt" download class="btn">⬇ Скачать правила</a>
+
+<body class="text-gray-900 dark:text-gray-100 font-sans transition-colors">
+  <div class="min-h-screen flex flex-col items-center py-10 px-4">
+    <div class="w-full max-w-4xl">
+      <header class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-12">
+        <h1 class="text-4xl md:text-5xl font-bold">💬 Объявления</h1>
+        <div class="flex flex-wrap gap-2 md:gap-3">
+          <a href="#" onclick="downloadRules()" class="text-accent underline hover:text-yellow-600">📥 Скачать
+            правила</a>
+          <button onclick="toggleTheme()"
+            class="text-xl px-4 py-2 rounded-lg bg-accent text-white hover:bg-yellow-500 transition">🌓</button>
+          <button onclick="signInWithGoogle()"
+            class="text-sm px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">🔐 Войти</button>
+        </div>
+      </header>
+
+      <form id="adForm" class="glass dark:bg-gray-800 p-8 rounded-3xl shadow-2xl space-y-5 mb-12">
+        <input type="text" id="title" placeholder="Заголовок"
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900"
+          required>
+        <textarea id="description" placeholder="Описание"
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900"
+          required></textarea>
+        <input type="text" id="author" placeholder="Ваше имя"
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900"
+          required>
+        <select id="category"
+          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900">
+          <option value="Общее">📌 Общее</option>
+          <option value="Продажа">💰 Продажа</option>
+          <option value="Покупка">🛒 Покупка</option>
+          <option value="Услуги">🔧 Услуги</option>
+        </select>
+        <input type="file" id="image" accept="image/*" class="w-full text-sm dark:text-gray-400">
+        <button type="submit"
+          class="w-full bg-primary hover:bg-secondary text-white py-3 rounded-xl font-semibold transition">📤
+          Опубликовать</button>
+      </form>
+
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
+        <input id="searchInput" type="text" placeholder="🔍 Поиск объявлений..."
+          class="w-full md:flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900">
+        <select id="sortSelect"
+          class="w-full md:w-60 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900">
+          <option value="created">🕒 По дате</option>
+          <option value="title">🔤 По заголовку</option>
+          <option value="author">👤 По автору</option>
+          <option value="category">📁 По категории</option>
+        </select>
+      </div>
+
+      <div id="adsList" class="grid gap-6 md:grid-cols-2"></div>
+      <div id="adminPanel" class="hidden mt-16">
+        <h2 class="text-2xl font-bold mb-4">🛠️ Админ-панель</h2>
+        <div id="adminAdsList" class="space-y-4"></div>
+      </div>
+    </div>
   </div>
 
-  <h1>📌 Правила Чата</h1>
-
-  <section>
-    <h2>❗ Общие Запреты</h2>
-    <ul>
-      <li><strong>1.1</strong> Продажа игровой валюты — <strong>бан</strong></li>
-      <li><strong>1.2</strong> Продажа/покупка аккаунтов — <strong>бан</strong></li>
-      <li><strong>2.1</strong> Реклама сообществ — <strong>бан</strong></li>
-      <li><strong>2.2</strong> Реклама читов и взломов — <strong>бан</strong></li>
-      <li><strong>2.3</strong> Реклама сторонних сборок — <strong>бан</strong></li>
-      <li><strong>3.1</strong> Контент 18+ — <strong>бан</strong></li>
-      <li><strong>3.2</strong> Политические темы — <strong>мут 3 ч</strong></li>
-      <li><strong>3.3</strong> Оскорбления родных — <strong>мут 24 ч</strong></li>
-      <li><strong>3.4</strong> Упоминание родных — <strong>мут 1 ч</strong></li>
-      <li><strong>3.5</strong> Пересылка нарушений — <strong>мут 2 ч</strong></li>
-      <li><strong>3.6</strong> Обход оскорблений — <strong>мут 1–24 ч</strong></li>
-      <li><strong>3.7</strong> Аморальные действия — <strong>мут 6 ч</strong></li>
-      <li><strong>3.8</strong> Оскорбления участников — <strong>мут 1 ч</strong></li>
-      <li><strong>3.9</strong> Слив личных данных — <strong>перманентный бан</strong></li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>📣 Спам и Нарушения</h2>
-    <ul>
-      <li><strong>4.1</strong> Много ЗАГЛАВНЫХ букв — предупреждение/мут</li>
-      <li><strong>4.2</strong> Фейки/дезинформация — <strong>мут/бан</strong></li>
-      <li><strong>4.3</strong> Реклама чаще 1 раза в 10 мин — <strong>мут 1 ч</strong></li>
-      <li><strong>4.4</strong> Частые вопросы по рынку — <strong>мут 1 ч</strong></li>
-      <li><strong>4.5</strong> Мат — 1 предупреждение (3 = мут/бан)</li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>🛠 Дополнительные Правила</h2>
-    <ul>
-      <li><strong>5.1</strong> Выдача себя за администрацию — <strong>перманентный бан</strong></li>
-      <li><strong>5.2</strong> Провокации и конфликты — <strong>мут/бан</strong></li>
-      <li><strong>5.3</strong> Упоминание админов без причины — <strong>мут 2 ч</strong></li>
-    </ul>
-  </section>
-
-  <section>
-    <h2>💰 Торговля в Чате</h2>
-    <p>Сообщения о покупке/продаже можно отправлять не чаще одного раза в 10 минут. Нарушения приравниваются к рекламе (см. п. 2).</p>
-  </section>
-
-  <section>
-    <h2>⚠️ Жалобы на Модерацию</h2>
-    <p>Если вы считаете, что наказание выдано без причины — обратитесь к <strong>@tttasyaa</strong>.</p>
-  </section>
-
-  <section>
-    <h2>👮 Права Администрации</h2>
-    <p>Администрация вправе выдавать наказания по своему усмотрению в спорных или нестандартных ситуациях.</p>
-  </section>
-
-  <section>
-    <h2>💬 Общение</h2>
-    <p>Соблюдайте уважительный тон и правила — сделаем чат комфортным для всех 😊</p>
-  </section>
-
-  <footer>
-    &copy; 2025 Правила чата. Все права защищены.
-  </footer>
+  <div id="confirmModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-sm text-center space-y-4">
+      <p class="text-lg font-semibold">Удалить это объявление?</p>
+      <div class="flex justify-center gap-4 mt-4">
+        <button id="cancelDelete"
+          class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition">Отмена</button>
+        <button id="confirmDelete"
+          class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">Удалить</button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    function toggleTheme() {
-      document.body.classList.toggle('dark');
+    const firebaseConfig = {
+      apiKey: "AIzaSyCHLAbHqf08LeqlGWhGe1vlOUc_HCk31b4",
+      authDomain: "officialbysamaraa.firebaseapp.com",
+      projectId: "officialbysamaraa",
+      storageBucket: "officialbysamaraa.firebasestorage.app",
+      messagingSenderId: "730619245461",
+      appId: "1:730619245461:web:b462380b3043b587333c9c",
+      measurementId: "G-6XRGSMP72W"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    const ADMIN_EMAILS = ["admin@example.com"];
+
+    function signInWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).then(() => {
+        renderAds();
+        checkAdmin();
+      });
+    }
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.querySelector("button[onclick='signInWithGoogle()']").textContent = `👤 ${user.displayName}`;
+        checkAdmin();
+      }
+    });
+
+    function checkAdmin() {
+      const panel = document.getElementById("adminPanel");
+      const user = auth.currentUser;
+      if (user && ADMIN_EMAILS.includes(user.email)) {
+        panel.classList.remove("hidden");
+      } else {
+        panel.classList.add("hidden");
+      }
+    }
+
+    function downloadRules() {
+      const rules = `ПРАВИЛА ЧАТА ❗\n...`; // Здесь вставить полные правила
+      const blob = new Blob([rules], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = "rules.txt";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    document.getElementById("adForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = adForm.title.value.trim();
+      const description = adForm.description.value.trim();
+      const author = adForm.author.value.trim();
+      const category = adForm.category.value;
+      const file = document.getElementById("image").files[0];
+      let imageUrl = "";
+      if (file) {
+        const storageRef = storage.ref(`ads/${Date.now()}_${file.name}`);
+        await storageRef.put(file);
+        imageUrl = await storageRef.getDownloadURL();
+      }
+      db.collection("ads").add({
+        title, description, author, category, imageUrl,
+        created: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        adForm.reset();
+        renderAds();
+      });
+    });
+
+    const sortSelect = document.getElementById("sortSelect");
+    sortSelect.addEventListener("change", renderAds);
+
+    function renderAds() {
+      const query = searchInput.value.toLowerCase();
+      const sortBy = sortSelect.value;
+      db.collection("ads").get().then(snapshot => {
+        let ads = [];
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          data.id = doc.id;
+          ads.push(data);
+        });
+        if (sortBy === "title") ads.sort((a, b) => a.title.localeCompare(b.title));
+        else if (sortBy === "author") ads.sort((a, b) => a.author.localeCompare(b.author));
+        else if (sortBy === "category") ads.sort((a, b) => a.category.localeCompare(b.category));
+        else ads.sort((a, b) => b.created?.toDate?.() - a.created?.toDate?.());
+
+        adsList.innerHTML = "";
+        adminAdsList.innerHTML = "";
+
+        ads.forEach(ad => {
+          if (!ad.title.toLowerCase().includes(query)) return;
+          const adElement = document.createElement("div");
+          adElement.className = "bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md transition hover:shadow-xl flex flex-col justify-between";
+          adElement.innerHTML = `
+            <h2 class="text-xl font-semibold mb-2">${ad.title}</h2>
+            <span class="text-xs text-gray-400">📁 ${ad.category}</span>
+            <p class="text-sm text-gray-700 dark:text-gray-300 my-4">${ad.description}</p>
+            ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="image" class="rounded-xl mb-4">` : ''}
+            <div class="flex justify-between items-center text-xs text-gray-500">
+              <span>👤 ${ad.author}</span>
+              <button onclick="deleteAd('${ad.id}')" class="text-red-500 hover:text-red-600">🗑️ Удалить</button>
+            </div>`;
+          adsList.appendChild(adElement);
+          if (auth.currentUser && ADMIN_EMAILS.includes(auth.currentUser.email)) {
+            const adminAdElement = adElement.cloneNode(true);
+            adminAdsList.appendChild(adminAdElement);
+          }
+        });
+      });
     }
   </script>
 </body>
+
 </html>
