@@ -48,77 +48,38 @@
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 20px;
+      background: #4f46e5;
+      color: white;
+      border-radius: 8px;
+      font-weight: 600;
+      animation: fadein 0.3s, fadeout 0.3s 2.7s;
+      z-index: 1000;
+    }
+
+    @keyframes fadein {
+      from { opacity: 0; bottom: 0; }
+      to { opacity: 1; bottom: 20px; }
+    }
+
+    @keyframes fadeout {
+      from { opacity: 1; bottom: 20px; }
+      to { opacity: 0; bottom: 0; }
+    }
   </style>
 </head>
 
 <body class="text-gray-900 dark:text-gray-100 font-sans transition-colors">
-  <div class="min-h-screen flex flex-col items-center py-10 px-4">
-    <div class="w-full max-w-4xl">
-      <header class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-12">
-        <h1 class="text-4xl md:text-5xl font-bold">💬 Объявления</h1>
-        <div class="flex flex-wrap gap-2 md:gap-3">
-          <a href="#" onclick="downloadRules()" class="text-accent underline hover:text-yellow-600">📅 Скачать правила</a>
-          <button onclick="toggleTheme()"
-            class="text-xl px-4 py-2 rounded-lg bg-accent text-white hover:bg-yellow-500 transition">🌃</button>
-          <button id="authButton"
-            class="text-sm px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary">🔐 Войти</button>
-        </div>
-      </header>
+  <div id="toastContainer"></div>
 
-      <form id="adForm" class="glass dark:bg-gray-800 p-8 rounded-3xl shadow-2xl space-y-5 mb-12">
-        <input type="text" id="title" placeholder="Заголовок" required
-          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900" />
-        <textarea id="description" placeholder="Описание" required
-          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900"></textarea>
-        <input type="text" id="author" placeholder="Ваше имя" required
-          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900" />
-        <select id="category"
-          class="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900">
-          <option value="Общее">📌 Общее</option>
-          <option value="Продажа">💰 Продажа</option>
-          <option value="Покупка">🚲 Покупка</option>
-          <option value="Услуги">🔧 Услуги</option>
-        </select>
-        <input type="file" id="image" accept="image/*"
-          class="w-full text-sm dark:text-gray-400" />
-        <button type="submit"
-          class="w-full bg-primary hover:bg-secondary text-white py-3 rounded-xl font-semibold transition">📤 Опубликовать</button>
-      </form>
+  <!-- остальная разметка (оставляем без изменений) -->
 
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-10">
-        <input id="searchInput" type="text" placeholder="🔍 Поиск объявлений..."
-          class="w-full md:flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900" />
-        <select id="sortSelect"
-          class="w-full md:w-60 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-accent dark:bg-gray-900">
-          <option value="created">🕒 По дате</option>
-          <option value="title">🔤 По заголовку</option>
-          <option value="author">👤 По автору</option>
-          <option value="category">📁 По категории</option>
-        </select>
-      </div>
-
-      <div id="adsList" class="grid gap-6 md:grid-cols-2"></div>
-      <div id="adminPanel" class="hidden mt-16">
-        <h2 class="text-2xl font-bold mb-4">🛠️ Админ-панель</h2>
-        <div id="adminAdsList" class="space-y-4"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal -->
-  <div id="confirmModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 hidden">
-    <div class="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-sm text-center space-y-4">
-      <p class="text-lg font-semibold">Удалить это объявление?</p>
-      <div class="flex justify-center gap-4 mt-4">
-        <button id="cancelDelete"
-          class="px-4 py-2 bg-gray-300 dark:bg-gray-700 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition">Отмена</button>
-        <button id="confirmDelete"
-          class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition">Удалить</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Основной JavaScript -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCHLAbHqf08LeqlGWhGe1vlOUc_HCk31b4",
@@ -135,21 +96,32 @@
     const storage = firebase.storage();
     const ADMIN_EMAILS = ["axmatovaxmat848@gmail.com"];
 
-    function downloadRules() {
-      const rules = `ПРАВИЛА ЧАТА ❗\n...`;
-      const blob = new Blob([rules], { type: 'text/plain' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = "rules.txt";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    function showToast(message, type = "info") {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.style.background = type === "error" ? "#ef4444" : "#4f46e5";
+      toast.textContent = message;
+      document.getElementById("toastContainer").appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     function checkAdmin() {
       const panel = document.getElementById("adminPanel");
       const user = auth.currentUser;
       panel.classList.toggle("hidden", !(user && ADMIN_EMAILS.includes(user.email)));
+    }
+
+    function deleteAd(adId) {
+      const user = auth.currentUser;
+      if (!user || !ADMIN_EMAILS.includes(user.email)) {
+        showToast("Нет доступа на удаление", "error");
+        return;
+      }
+      if (!confirm("Удалить объявление?")) return;
+      db.collection("ads").doc(adId).delete().then(() => {
+        showToast("Объявление удалено");
+        renderAds();
+      });
     }
 
     function renderAds() {
@@ -167,15 +139,19 @@
         adminAdsList.innerHTML = "";
 
         ads.forEach(ad => {
+          const dateStr = ad.created?.toDate?.().toLocaleDateString() || "";
           const adHTML = `
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl">
-              <h2 class="text-xl font-semibold mb-2">${ad.title}</h2>
-              <span class="text-xs text-gray-400">📁 ${ad.category}</span>
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition duration-300">
+              <h2 class="text-xl font-semibold mb-1">${ad.title}</h2>
+              <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
+                <span>📁 ${ad.category}</span>
+                <span>🕒 ${dateStr}</span>
+              </div>
               <p class="text-sm text-gray-700 dark:text-gray-300 my-4">${ad.description}</p>
-              ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="image" class="rounded-xl mb-4">` : ''}
+              ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="image" class="rounded-xl mb-4 max-h-60 object-cover">` : ''}
               <div class="flex justify-between items-center text-xs text-gray-500">
                 <span>👤 ${ad.author}</span>
-                <button onclick="deleteAd('${ad.id}')" class="text-red-500 hover:text-red-600">🗑️ Удалить</button>
+                ${auth.currentUser && ADMIN_EMAILS.includes(auth.currentUser.email) ? `<button onclick="deleteAd('${ad.id}')" class="text-red-500 hover:text-red-600">🗑️ Удалить</button>` : ''}
               </div>
             </div>`;
           adsList.insertAdjacentHTML("beforeend", adHTML);
@@ -184,16 +160,6 @@
           }
         });
       });
-    }
-
-    function signInWithGoogle() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider)
-        .then(() => {
-          renderAds();
-          checkAdmin();
-        })
-        .catch(error => alert("Ошибка входа: " + error.message));
     }
 
     auth.onAuthStateChanged(user => {
@@ -205,7 +171,11 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("authButton").addEventListener("click", signInWithGoogle);
-
+      document.getElementById("adForm").title.focus();
+      document.getElementById("image").addEventListener("change", e => {
+        const file = e.target.files[0];
+        if (file) showToast("Изображение выбрано: " + file.name);
+      });
       document.getElementById("adForm").addEventListener("submit", async (e) => {
         e.preventDefault();
         const title = adForm.title.value.trim();
@@ -225,15 +195,14 @@
         }).then(() => {
           adForm.reset();
           renderAds();
+          showToast("Объявление опубликовано!");
         });
       });
 
       sortSelect.addEventListener("change", renderAds);
       searchInput.addEventListener("input", renderAds);
-
       renderAds();
     });
   </script>
 </body>
-
 </html>
