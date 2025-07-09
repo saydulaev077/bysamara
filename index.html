@@ -165,228 +165,102 @@
 
   <!-- 🔹 Скрипт -->
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyCHLAbHqf08LeqlGWhGe1vlOUc_HCk31b4",
-      authDomain: "officialbysamaraa.firebaseapp.com",
-      projectId: "officialbysamaraa",
-      storageBucket: "officialbysamaraa.appspot.com",
-      messagingSenderId: "730619245461",
-      appId: "1:730619245461:web:b462380b3043b587333c9c",
-      measurementId: "G-6XRGSMP72W"
-    };
+    window.addEventListener("DOMContentLoaded", () => {
+      // Firebase конфигурация
+      const firebaseConfig = {
+        apiKey: "AIzaSyA0vpiFyn1TfCNdL_yZsUpWhcEqxDFlE-o",
+        authDomain: "bardovka.firebaseapp.com",
+        projectId: "bardovka",
+        storageBucket: "bardovka.appspot.com",
+        messagingSenderId: "1187834472",
+        appId: "1:1187834472:web:4a2b7d6c20e9b82c0f7d78",
+        measurementId: "G-KXD60VFGD3"
+      };
+      firebase.initializeApp(firebaseConfig);
+      const db = firebase.firestore();
+      const auth = firebase.auth();
+      const storage = firebase.storage();
 
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    const storage = firebase.storage();
-    const ADMIN_EMAILS = ["axmatovaxmat848@gmail.com"];
-    let currentUserEmail = null;
+      const toast = document.getElementById("toast");
+      const toastMessage = document.getElementById("toast-message");
 
-    const authButton = document.getElementById("authButton");
-    const logoutButton = document.getElementById("logoutButton");
-    const adsList = document.getElementById("adsList");
+      function showToast(message, type = "success") {
+        toastMessage.textContent = message;
+        toast.style.backgroundColor = type === "success" ? "#4caf50" : "#f44336";
+        toast.style.bottom = "20px";
+        setTimeout(() => {
+          toast.style.bottom = "-100px";
+        }, 3000);
+      }
 
-    authButton.addEventListener("click", () => {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider)
-        .then(() => {
-          showToast("Успешный вход!");
-          logEvent("✅ Пользователь вошел");
-        })
-        .catch(err => showToast("Ошибка входа", "error"));
-    });
+      const authButton = document.getElementById("authButton");
+      const userEmailDisplay = document.getElementById("userEmail");
 
-    logoutButton.addEventListener("click", () => {
-      auth.signOut().then(() => {
-        showToast("Вы вышли");
-        logEvent("🚪 Пользователь вышел");
+      authButton.addEventListener("click", async () => {
+        if (auth.currentUser) {
+          await auth.signOut();
+          showToast("Вы вышли из аккаунта");
+        } else {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          auth.signInWithPopup(provider)
+            .then((result) => {
+              showToast("Вы успешно вошли");
+            })
+            .catch((error) => {
+              showToast("Ошибка при входе", "error");
+              console.error(error);
+            });
+        }
+      });
+
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          authButton.textContent = "🚪 Выйти";
+          userEmailDisplay.textContent = `Вы вошли как: ${user.email}`;
+        } else {
+          authButton.textContent = "🔐 Войти";
+          userEmailDisplay.textContent = "";
+        }
+      });
+
+      document.getElementById("adForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        console.log("Форма отправлена"); // проверка
+
+        if (!auth.currentUser) {
+          showToast("Сначала войдите в аккаунт", "error");
+          return;
+        }
+
+        const title = document.getElementById("title").value;
+        const description = document.getElementById("description").value;
+        const fileInput = document.getElementById("image");
+        const file = fileInput.files[0];
+
+        const data = {
+          title,
+          description,
+          user: auth.currentUser.email,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        try {
+          if (file) {
+            const ref = storage.ref().child(`ads/${Date.now()}_${file.name}`);
+            await ref.put(file);
+            data.imageUrl = await ref.getDownloadURL();
+          }
+
+          await db.collection("ads").add(data);
+          showToast("Объявление опубликовано!");
+
+          document.getElementById("adForm").reset();
+        } catch (err) {
+          console.error("Ошибка при отправке формы:", err);
+          showToast("Ошибка при публикации", "error");
+        }
       });
     });
-
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        authButton.classList.add("hidden");
-        logoutButton.classList.remove("hidden");
-        currentUserEmail = user.email;
-        if (ADMIN_EMAILS.includes(user.email)) {
-          document.getElementById("adminPanel").classList.remove("hidden");
-          logEvent(`🔑 Админ вошел: ${user.email}`);
-        } else {
-          document.getElementById("adminPanel").classList.add("hidden");
-        }
-        authButton.textContent = `👤 ${user.displayName}`;
-      } else {
-        authButton.classList.remove("hidden");
-        logoutButton.classList.add("hidden");
-        authButton.textContent = "🔐 Войти";
-        document.getElementById("adminPanel").classList.add("hidden");
-        currentUserEmail = null;
-      }
-    });
-
-    document.getElementById("adForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const form = e.target;
-      const data = {
-        title: form.title.value,
-        description: form.description.value,
-        author: form.author.value,
-        category: form.category.value,
-        created: firebase.firestore.FieldValue.serverTimestamp()
-      };
-
-      const file = document.getElementById("image").files[0];
-      if (file) {
-        const ref = storage.ref().child(`ads/${Date.now()}_${file.name}`);
-        await ref.put(file);
-        data.imageUrl = await ref.getDownloadURL();
-      }
-
-      db.collection("ads").add(data)
-        .then(() => {
-          form.reset();
-          loadAds();
-          showToast("Объявление добавлено!");
-          logEvent(`📢 Объявление добавлено: ${data.title}`);
-        })
-        .catch(() => showToast("Ошибка публикации", "error"));
-    });
-
-    function showToast(message, type = "info") {
-      const toast = document.createElement("div");
-      toast.className = "toast";
-      toast.style.background = type === "error" ? "#ef4444" : "#4f46e5";
-      toast.textContent = message;
-      document.getElementById("toastContainer").appendChild(toast);
-      setTimeout(() => toast.remove(), 3000);
-    }
-
-    function logEvent(message) {
-      const logOutput = document.getElementById("logOutput");
-      if (logOutput) {
-        const timestamp = new Date().toLocaleString();
-        logOutput.textContent += `[${timestamp}] ${message}\n`;
-        logOutput.scrollTop = logOutput.scrollHeight;
-      }
-    }
-
-    function renderAd(ad, id) {
-      const card = document.createElement("div");
-      card.className = "glass p-4 rounded shadow-md";
-      card.innerHTML = `
-      <h2 class="text-xl font-bold">${ad.title}</h2>
-      <p>${ad.description}</p>
-      <p class="text-sm text-gray-500 mt-1">Автор: ${ad.author}</p>
-      ${ad.imageUrl ? `<img src="${ad.imageUrl}" alt="${ad.title}" class="mt-2 rounded max-h-64">` : ""}
-      ${renderAdActions({ id, title: ad.title, description: ad.description })}
-      <ul class="comments-list text-sm mt-2 space-y-1" id="comments-${id}"></ul>
-    `;
-      adsList.prepend(card);
-      loadComments(id);
-    }
-
-    function renderAdActions(ad) {
-      const likeKey = `likes_${ad.id}`;
-      const liked = localStorage.getItem(likeKey);
-      const isAdmin = ADMIN_EMAILS.includes(currentUserEmail || "");
-      return `
-      <div class="flex flex-wrap gap-2 items-center mt-4">
-        <button class="like-btn text-sm text-pink-500 hover:text-pink-600" data-id="${ad.id}">
-          ${liked ? '💖 Понравилось' : '❤️ Нравится'}
-        </button>
-        <input placeholder="Добавить комментарий..." data-id="${ad.id}"
-          class="comment-input w-full p-1 text-sm border rounded" />
-        ${isAdmin ? `
-          <button class="delete-btn text-sm text-red-500 hover:text-red-600" data-id="${ad.id}">🗑 Удалить</button>
-          <button class="edit-btn text-sm text-blue-500 hover:text-blue-600" data-id="${ad.id}" data-title="${ad.title}"
-            data-description="${ad.description}">✏️ Редактировать</button>` : ""}
-      </div>`;
-    }
-
-    function loadAds() {
-      adsList.innerHTML = "";
-      db.collection("ads").orderBy("created", "desc").get()
-        .then(snapshot => {
-          snapshot.forEach(doc => renderAd(doc.data(), doc.id));
-        });
-    }
-
-    function addComment(adId, text) {
-      const user = auth.currentUser;
-      const commentData = {
-        text,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        author: user ? user.displayName : "Аноним"
-      };
-      db.collection("ads").doc(adId).collection("comments").add(commentData)
-        .then(() => renderComment(adId, commentData))
-        .catch(() => showToast("Ошибка при добавлении комментария", "error"));
-    }
-
-    function renderComment(adId, { text, author }) {
-      const commentList = document.getElementById(`comments-${adId}`);
-      if (commentList) {
-        const li = document.createElement("li");
-        li.innerHTML = `<strong>${author}:</strong> ${text}`;
-        commentList.appendChild(li);
-      }
-    }
-
-    function loadComments(adId) {
-      db.collection("ads").doc(adId).collection("comments").orderBy("createdAt").get()
-        .then(snapshot => {
-          snapshot.forEach(doc => renderComment(adId, doc.data()));
-        });
-    }
-
-    document.addEventListener("click", e => {
-      if (e.target.classList.contains("like-btn")) {
-        const id = e.target.dataset.id;
-        const key = `likes_${id}`;
-        if (!localStorage.getItem(key)) {
-          localStorage.setItem(key, true);
-          e.target.textContent = "💖 Понравилось";
-        }
-      }
-
-      if (e.target.classList.contains("delete-btn")) {
-        const id = e.target.dataset.id;
-        if (confirm("Удалить объявление?")) {
-          db.collection("ads").doc(id).delete()
-            .then(() => {
-              showToast("Объявление удалено");
-              logEvent(`🗑 Объявление удалено: ${id}`);
-              loadAds();
-            });
-        }
-      }
-
-      if (e.target.classList.contains("edit-btn")) {
-        const id = e.target.dataset.id;
-        const title = prompt("Изменить заголовок:", e.target.dataset.title);
-        const description = prompt("Изменить описание:", e.target.dataset.description);
-        if (title && description) {
-          db.collection("ads").doc(id).update({ title, description })
-            .then(() => {
-              showToast("Объявление обновлено");
-              logEvent(`✏️ Объявление обновлено: ${id}`);
-              loadAds();
-            });
-        }
-      }
-    });
-
-    document.addEventListener("keypress", e => {
-      if (e.target.classList.contains("comment-input") && e.key === "Enter") {
-        e.preventDefault();
-        const text = e.target.value.trim();
-        if (!text) return;
-        addComment(e.target.dataset.id, text);
-        e.target.value = "";
-      }
-    });
-
-    window.addEventListener("load", loadAds);
   </script>
 </body>
 
