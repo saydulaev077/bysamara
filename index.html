@@ -64,13 +64,27 @@
     }
 
     @keyframes fadein {
-      from { opacity: 0; bottom: 0; }
-      to { opacity: 1; bottom: 20px; }
+      from {
+        opacity: 0;
+        bottom: 0;
+      }
+
+      to {
+        opacity: 1;
+        bottom: 20px;
+      }
     }
 
     @keyframes fadeout {
-      from { opacity: 1; bottom: 20px; }
-      to { opacity: 0; bottom: 0; }
+      from {
+        opacity: 1;
+        bottom: 20px;
+      }
+
+      to {
+        opacity: 0;
+        bottom: 0;
+      }
     }
   </style>
 </head>
@@ -82,62 +96,110 @@
       <h1 class="text-3xl font-bold">📢 Объявления</h1>
       <div class="flex gap-2 items-center">
         <button id="themeToggle" class="px-3 py-2 rounded-xl bg-gray-300 dark:bg-gray-700 text-sm">🌓</button>
-        <button id="authButton" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-secondary transition">🔐 Войти</button>
+        <button id="authButton"
+          class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-secondary transition">🔐
+          Войти</button>
       </div>
     </header>
 
-    <!-- остальные части без изменений -->
+    <form id="adForm" class="glass p-4 rounded-xl mb-6">
+      <input type="text" name="title" placeholder="Заголовок" class="w-full p-2 rounded mb-2" required />
+      <textarea name="description" placeholder="Описание" class="w-full p-2 rounded mb-2" required></textarea>
+      <input type="text" name="author" placeholder="Ваше имя" class="w-full p-2 rounded mb-2" required />
+      <select name="category" class="w-full p-2 rounded mb-2">
+        <option value="Общее">Общее</option>
+        <option value="Продажа">Продажа</option>
+        <option value="Событие">Событие</option>
+      </select>
+      <input type="file" id="image" accept="image/*" class="mb-2" />
+      <button type="submit" class="bg-primary text-white px-4 py-2 rounded hover:bg-secondary">Опубликовать</button>
+    </form>
 
-    <script>
-      const themeToggle = document.getElementById("themeToggle");
-      themeToggle.addEventListener("click", () => {
-        document.documentElement.classList.toggle("dark");
-        localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
-      });
-      if (localStorage.getItem("theme") === "dark") {
-        document.documentElement.classList.add("dark");
-      }
+    <div class="flex justify-between mb-4">
+      <input type="text" id="searchInput" placeholder="Поиск..." class="w-full p-2 border rounded" />
+      <select id="sortSelect" class="ml-2 p-2 rounded">
+        <option value="created">Сначала новые</option>
+        <option value="title">По названию</option>
+      </select>
+    </div>
 
-      function renderAdActions(ad) {
-        const likeKey = `likes_${ad.id}`;
-        const liked = localStorage.getItem(likeKey);
-        return `
-          <div class="flex gap-4 items-center mt-4">
-            <button class="like-btn text-sm text-pink-500 hover:text-pink-600" data-id="${ad.id}">❤️ Нравится</button>
-            <input placeholder="Добавить комментарий..." data-id="${ad.id}" class="comment-input w-full p-1 text-sm border rounded" />
-          </div>
-          <ul class="comments-list text-sm mt-2 space-y-1" id="comments-${ad.id}"></ul>
-        `;
-      }
-
-      function addComment(adId, text) {
-        const commentList = document.getElementById(`comments-${adId}`);
-        const li = document.createElement("li");
-        li.textContent = text;
-        commentList.appendChild(li);
-      }
-
-      document.addEventListener("click", e => {
-        if (e.target.classList.contains("like-btn")) {
-          const id = e.target.dataset.id;
-          const key = `likes_${id}`;
-          if (!localStorage.getItem(key)) {
-            localStorage.setItem(key, true);
-            e.target.textContent = "💖 Понравилось";
-          }
-        }
-      });
-
-      document.addEventListener("keypress", e => {
-        if (e.target.classList.contains("comment-input") && e.key === "Enter") {
-          e.preventDefault();
-          const text = e.target.value.trim();
-          if (!text) return;
-          addComment(e.target.dataset.id, text);
-          e.target.value = "";
-        }
-      });
-    </script>
+    <section id="adsList" class="grid gap-4"></section>
   </main>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCHLAbHqf08LeqlGWhGe1vlOUc_HCk31b4",
+      authDomain: "officialbysamaraa.firebaseapp.com",
+      projectId: "officialbysamaraa",
+      storageBucket: "officialbysamaraa.appspot.com",
+      messagingSenderId: "730619245461",
+      appId: "1:730619245461:web:b462380b3043b587333c9c",
+      measurementId: "G-6XRGSMP72W"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+    const ADMIN_EMAILS = ["axmatovaxmat848@gmail.com"];
+
+    function showToast(message, type = "info") {
+      const toast = document.createElement("div");
+      toast.className = "toast";
+      toast.style.background = type === "error" ? "#ef4444" : "#4f46e5";
+      toast.textContent = message;
+      document.getElementById("toastContainer").appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    const themeToggle = document.getElementById("themeToggle");
+    themeToggle.addEventListener("click", () => {
+      document.documentElement.classList.toggle("dark");
+      localStorage.setItem("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
+    });
+    if (localStorage.getItem("theme") === "dark") {
+      document.documentElement.classList.add("dark");
+    }
+
+    function renderAdActions(ad) {
+      const likeKey = `likes_${ad.id}`;
+      const liked = localStorage.getItem(likeKey);
+      return `
+        <div class="flex gap-4 items-center mt-4">
+          <button class="like-btn text-sm text-pink-500 hover:text-pink-600" data-id="${ad.id}">${liked ? '💖 Понравилось' : '❤️ Нравится'}</button>
+          <input placeholder="Добавить комментарий..." data-id="${ad.id}" class="comment-input w-full p-1 text-sm border rounded" />
+        </div>
+        <ul class="comments-list text-sm mt-2 space-y-1" id="comments-${ad.id}"></ul>
+      `;
+    }
+
+    function addComment(adId, text) {
+      const commentList = document.getElementById(`comments-${adId}`);
+      const li = document.createElement("li");
+      li.textContent = text;
+      commentList.appendChild(li);
+    }
+
+    document.addEventListener("click", e => {
+      if (e.target.classList.contains("like-btn")) {
+        const id = e.target.dataset.id;
+        const key = `likes_${id}`;
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, true);
+          e.target.textContent = "💖 Понравилось";
+        }
+      }
+    });
+
+    document.addEventListener("keypress", e => {
+      if (e.target.classList.contains("comment-input") && e.key === "Enter") {
+        e.preventDefault();
+        const text = e.target.value.trim();
+        if (!text) return;
+        addComment(e.target.dataset.id, text);
+        e.target.value = "";
+      }
+    });
+  </script>
 </body>
+
 </html>
