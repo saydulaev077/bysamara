@@ -77,8 +77,47 @@
 
 <body class="text-gray-900 dark:text-gray-100 font-sans transition-colors">
   <div id="toastContainer"></div>
+  <main class="container mx-auto p-4 max-w-4xl">
+    <header class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold">📢 Объявления</h1>
+      <button id="authButton" class="px-4 py-2 rounded-xl bg-primary text-white font-semibold hover:bg-secondary transition">🔐 Войти</button>
+    </header>
 
-  <!-- остальная разметка (оставляем без изменений) -->
+    <form id="adForm" class="glass p-6 rounded-2xl shadow-md mb-6 hidden">
+      <h2 class="text-xl font-semibold mb-4">Добавить объявление</h2>
+      <input name="title" placeholder="Заголовок" required class="w-full p-2 mb-2 rounded-md border" />
+      <textarea name="description" placeholder="Описание" required class="w-full p-2 mb-2 rounded-md border"></textarea>
+      <input name="author" placeholder="Автор" required class="w-full p-2 mb-2 rounded-md border" />
+      <select name="category" class="w-full p-2 mb-2 rounded-md border">
+        <option>Общее</option>
+        <option>Продажа</option>
+        <option>Работа</option>
+        <option>Услуги</option>
+      </select>
+      <input type="file" id="image" class="mb-4" />
+      <button class="bg-accent text-white px-4 py-2 rounded-xl font-semibold hover:bg-yellow-500">📤 Опубликовать</button>
+    </form>
+
+    <div class="mb-4 flex items-center gap-4">
+      <input id="searchInput" placeholder="Поиск..." class="flex-1 p-2 rounded-md border" />
+      <select id="sortSelect" class="p-2 rounded-md border">
+        <option value="created">Сначала новые</option>
+        <option value="title">По заголовку</option>
+        <option value="category">По категории</option>
+      </select>
+    </div>
+
+    <div id="adsList" class="grid gap-6"></div>
+
+    <section id="adminPanel" class="hidden mt-10">
+      <h2 class="text-2xl font-bold mb-4">📋 Админ панель</h2>
+      <div id="adminAdsList" class="grid gap-6"></div>
+      <div id="logsPanel" class="mt-10">
+        <h3 class="text-xl font-semibold mb-2">📘 Логи</h3>
+        <ul id="logsList" class="text-sm space-y-1 text-gray-600 dark:text-gray-300"></ul>
+      </div>
+    </section>
+  </main>
 
   <script>
     const firebaseConfig = {
@@ -105,22 +144,52 @@
       setTimeout(() => toast.remove(), 3000);
     }
 
+    function signInWithGoogle() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => showToast(err.message, "error"));
+    }
+
+    function logAction(type, details) {
+      if (!auth.currentUser) return;
+      db.collection("logs").add({
+        type,
+        user: auth.currentUser.email,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        details
+      });
+    }
+
+    function loadLogs() {
+      db.collection("logs").orderBy("timestamp", "desc").limit(20).get().then(snapshot => {
+        const logsList = document.getElementById("logsList");
+        logsList.innerHTML = "";
+        snapshot.forEach(doc => {
+          const log = doc.data();
+          const date = log.timestamp?.toDate?.().toLocaleString() || "";
+          const li = document.createElement("li");
+          li.textContent = `[${date}] ${log.user} → ${log.type.toUpperCase()} (${JSON.stringify(log.details)})`;
+          logsList.appendChild(li);
+        });
+      });
+    }
+
     function checkAdmin() {
       const panel = document.getElementById("adminPanel");
       const user = auth.currentUser;
       panel.classList.toggle("hidden", !(user && ADMIN_EMAILS.includes(user.email)));
+      if (user && ADMIN_EMAILS.includes(user.email)) {
+        loadLogs();
+      }
     }
 
     function deleteAd(adId) {
       const user = auth.currentUser;
-      if (!user || !ADMIN_EMAILS.includes(user.email)) {
-        showToast("Нет доступа на удаление", "error");
-        return;
-      }
-      if (!confirm("Удалить объявление?")) return;
+      if (!user || !ADMIN_EMAILS.includes(user.email)) return showToast("Нет доступа", "error");
+      if (!confirm("Удалить?")) return;
       db.collection("ads").doc(adId).delete().then(() => {
-        showToast("Объявление удалено");
         renderAds();
+        showToast("Удалено");
+        logAction("delete", { adId });
       });
     }
 
@@ -140,8 +209,8 @@
 
         ads.forEach(ad => {
           const dateStr = ad.created?.toDate?.().toLocaleDateString() || "";
-          const adHTML = `
-            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition duration-300">
+          const html = `
+            <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md hover:shadow-xl transition">
               <h2 class="text-xl font-semibold mb-1">${ad.title}</h2>
               <div class="flex justify-between items-center text-xs text-gray-400 mb-2">
                 <span>📁 ${ad.category}</span>
@@ -154,9 +223,9 @@
                 ${auth.currentUser && ADMIN_EMAILS.includes(auth.currentUser.email) ? `<button onclick="deleteAd('${ad.id}')" class="text-red-500 hover:text-red-600">🗑️ Удалить</button>` : ''}
               </div>
             </div>`;
-          adsList.insertAdjacentHTML("beforeend", adHTML);
+          adsList.insertAdjacentHTML("beforeend", html);
           if (auth.currentUser && ADMIN_EMAILS.includes(auth.currentUser.email)) {
-            adminAdsList.insertAdjacentHTML("beforeend", adHTML);
+            adminAdsList.insertAdjacentHTML("beforeend", html);
           }
         });
       });
@@ -164,38 +233,37 @@
 
     auth.onAuthStateChanged(user => {
       if (user) {
-        document.getElementById("authButton").textContent = `👤 ${user.displayName}`;
+        authButton.textContent = `👤 ${user.displayName}`;
+        adForm.classList.remove("hidden");
         checkAdmin();
       }
     });
 
     document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("authButton").addEventListener("click", signInWithGoogle);
-      document.getElementById("adForm").title.focus();
-      document.getElementById("image").addEventListener("change", e => {
-        const file = e.target.files[0];
-        if (file) showToast("Изображение выбрано: " + file.name);
-      });
-      document.getElementById("adForm").addEventListener("submit", async (e) => {
+      authButton.addEventListener("click", signInWithGoogle);
+      adForm.addEventListener("submit", async e => {
         e.preventDefault();
-        const title = adForm.title.value.trim();
-        const description = adForm.description.value.trim();
-        const author = adForm.author.value.trim();
-        const category = adForm.category.value;
-        const file = document.getElementById("image").files[0];
+        if (!auth.currentUser) return showToast("Требуется вход", "error");
+        const { title, description, author, category } = adForm;
+        const file = image.files[0];
         let imageUrl = "";
         if (file) {
-          const storageRef = storage.ref(`ads/${Date.now()}_${file.name}`);
-          await storageRef.put(file);
-          imageUrl = await storageRef.getDownloadURL();
+          const ref = storage.ref(`ads/${Date.now()}_${file.name}`);
+          await ref.put(file);
+          imageUrl = await ref.getDownloadURL();
         }
         db.collection("ads").add({
-          title, description, author, category, imageUrl,
+          title: title.value.trim(),
+          description: description.value.trim(),
+          author: author.value.trim(),
+          category: category.value,
+          imageUrl,
           created: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
           adForm.reset();
           renderAds();
-          showToast("Объявление опубликовано!");
+          logAction("create", { title: title.value, category: category.value });
+          showToast("✅ Опубликовано");
         });
       });
 
