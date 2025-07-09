@@ -142,6 +142,20 @@
     const storage = firebase.storage();
     const ADMIN_EMAILS = ["axmatovaxmat848@gmail.com"];
 
+    const authButton = document.getElementById("authButton");
+    authButton.addEventListener("click", () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then(() => showToast("Успешный вход!"))
+        .catch(err => showToast("Ошибка входа", "error"));
+    });
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        authButton.textContent = `👤 ${user.displayName}`;
+      }
+    });
+
     function showToast(message, type = "info") {
       const toast = document.createElement("div");
       toast.className = "toast";
